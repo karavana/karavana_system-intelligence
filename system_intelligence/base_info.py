@@ -62,12 +62,28 @@ class BaseInfo:
         base_conversion_factor = self.determine_base_conversion_factor(device=device)
         conversion = {1000: ['B', 'KB', 'MB', 'GB', 'TB'],
                       1024: ['B', 'KiB', 'MiB', 'GiB', 'TiB']}
+        if not size or size == 'NA':
+            return ''
+        if isinstance(size, str):
+            # on some systems and linux distros, some of the values may be pre-formatted (like 128 KiB)
+            # therefore, they don't need to be casted and formatted
+            try:
+                size = float(size)
+            except ValueError:
+                return size
         i = 0
         while size > base_conversion_factor and i + 1 < len(conversion[base_conversion_factor]):
             i += 1
             size /= base_conversion_factor
+
+        # Dynamically adjust formatting based on the value
+        if size % 1 == 0:  # If the size is effectively an integer
+            formatted_size = f'{int(size)}'
+        else:
+            # Adjust the number of decimal places based on the precision needed
+            formatted_size = f'{size:.2f}'.rstrip('0').rstrip('.')
         
-        return f'{size:.2f} {conversion[base_conversion_factor][i]}'
+        return f'{formatted_size} {conversion[base_conversion_factor][i]}'
 
     @staticmethod
     def hz_to_hreadable_string(hz: int) -> str:
