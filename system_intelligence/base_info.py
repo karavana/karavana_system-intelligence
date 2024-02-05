@@ -23,25 +23,32 @@ class BaseInfo:
         """
         Initialize the table; so create it and init the column names
         """
-        pass
+        self.table_title = title
+        self.col_names = column_names
+        self.create_styled_table(title)
+        self.prepare_table(column_names)
 
     def create_styled_table(self, title: str) -> None:
         """
         Creates a custom rich styled table, which all outputs share.
         """
-        pass
+        self.table = Table(show_header=True, header_style="bold magenta")
+        self.table.title = title
+        self.table.box = HEAVY_HEAD
 
     def prepare_table(self, column_names):
         """
         Add the specified column names to the table
         """
-        pass
+        for col_name in column_names:
+            self.table.add_column(col_name)
 
     def print_table(self):
         """
         Print the result table to stdout
         """
-        pass
+        self.console = Console()
+        self.console.print(self.table)
 
     def format_bytes(self, size: t.Union[str, int], device: str = ''):
         """
@@ -52,7 +59,15 @@ class BaseInfo:
             512 = 512 B
             123456 = 1MB
         """
-       pass
+        base_conversion_factor = self.determine_base_conversion_factor(device=device)
+        conversion = {1000: ['B', 'KB', 'MB', 'GB', 'TB'],
+                      1024: ['B', 'KiB', 'MiB', 'GiB', 'TiB']}
+        i = 0
+        while size > base_conversion_factor and i + 1 < len(conversion[base_conversion_factor]):
+            i += 1
+            size /= base_conversion_factor
+        
+        return f'{size:.2f} {conversion[base_conversion_factor][i]}'
 
     @staticmethod
     def hz_to_hreadable_string(hz: int) -> str:
@@ -62,7 +77,24 @@ class BaseInfo:
         :param: number of hertz
         :return: human readable formatted string of hertz with unit
         """
-        pass
+        # Convert to a float for more natural scaling
+        if not isinstance(hz, int):
+            try:
+                hz = int(hz)
+            except:
+                raise ValueError(f"Expected an integer, got {type(hz)}")
+
+        units = ['Hz', 'kHz', 'MHz', 'GHz', 'THz']
+        magnitude = 0
+
+        while hz >= 1000 and magnitude < len(units) - 1:
+            magnitude += 1
+            hz /= 1000.0
+        
+        return f'{hz:.2f} {units[magnitude]}'
+
+        # Return the formatted string with the appropriate unit
+        return f"{hz:.2f} {units[unit_index]}"
 
     def determine_base_conversion_factor(self, device: str) -> int:
         """
@@ -71,4 +103,4 @@ class BaseInfo:
 
         So to convert bytes to other units (like KB or KiB), base10 will use a factor of 1000 where base2 will use a factor of 1024!
         """
-        pass
+        return 1000 if self.OS in ['darwin', 'linux_ubuntu'] else 1024
